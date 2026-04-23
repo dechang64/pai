@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pai"
+version = "0.2.0"
+description = "Philanthropic Asset Intelligence - AI-Powered Charitable Investment Optimization"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Dechang Wu", email = "dechang64@gmail.com"},
+]
+keywords = ["charitable-giving", "portfolio-optimization", "federated-learning", "ai", " philanthropy"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Non-Profit Organizations",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "streamlit>=1.28.0",
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "plotly>=5.18.0",
+    "scipy>=1.11.0",
+]
+
+[project.optional-dependencies]
+llm = [
+    "openai>=1.0.0",
+    "anthropic>=0.8.0",
+    "litellm>=1.0.0",
+]
+dev = [
+    "pytest>=7.4.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/dechang64/pai"
+Repository = "https://github.com/dechang64/pai"
+Documentation = "https://github.com/dechang64/pai#readme"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["core*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
