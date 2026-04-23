@@ -90,8 +90,9 @@ st.markdown("""
     section[data-testid="stSidebar"] [class*="stMarkdown"] span,
     section[data-testid="stSidebar"] [class*="stMarkdown"] h1,
     section[data-testid="stSidebar"] [class*="stMarkdown"] h2,
-    section[data-testid="stSidebar"] [class*="stMarkdown"] h3 {
-        color: white !important;
+    section[data-testid="stSidebar"] [class*="stMarkdown"] h3,
+    section[data-testid="stSidebar"] * {
+        color: #000000 !important;
     }
 </style>
 """, unsafe_allow_html=True)
