@@ -124,18 +124,20 @@ class LLMDonationAdvisor:
         annual_budget: str,
         interest_area: str,
         tax_situation: str,
-        charity_data: List[Dict]
+        charity_data: List[Dict],
+        rag_context: str = "",
     ) -> str:
         """
         Generate personalized donation advice.
-        
+
         Args:
             donor_type: Type of donor (individual, DAF holder, corporate, foundation)
             annual_budget: Annual giving budget
             interest_area: Area of interest (global health, rare disease, education, etc.)
             tax_situation: Tax deduction situation
             charity_data: List of charity information dictionaries
-            
+            rag_context: Optional context from Federated RAG retrieval
+
         Returns:
             Personalized donation advice as markdown string
         """
@@ -143,14 +145,18 @@ class LLMDonationAdvisor:
             return self._generate_demo_advice(
                 donor_type, annual_budget, interest_area, tax_situation, charity_data
             )
-        
+
         self._init_client()
-        
+
         # Build the prompt
         user_prompt = self._build_prompt(
             donor_type, annual_budget, interest_area, tax_situation, charity_data
         )
-        
+
+        # Inject RAG context if available
+        if rag_context:
+            user_prompt = f"## Knowledge Base Context\n{rag_context}\n\n---\n\n{user_prompt}"
+
         try:
             if self.config.provider == LLMProvider.OPENAI:
                 response = self._client.chat.completions.create(
@@ -163,7 +169,7 @@ class LLMDonationAdvisor:
                     max_tokens=self.config.max_tokens
                 )
                 return response.choices[0].message.content
-                
+
             elif self.config.provider == LLMProvider.ANTHROPIC:
                 response = self._client.messages.create(
                     model=self.config.model,
@@ -172,7 +178,7 @@ class LLMDonationAdvisor:
                     messages=[{"role": "user", "content": user_prompt}]
                 )
                 return response.content[0].text
-                
+
         except Exception as e:
             print(f"LLM API error: {e}. Falling back to demo mode.")
             return self._generate_demo_advice(

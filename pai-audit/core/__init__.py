@@ -1,7 +1,7 @@
 """
 PAI Core Modules
 
-Portfolio Optimization, LLM Integration, and Federated Learning
+Portfolio Optimization, LLM Integration, Federated Learning, and Federated RAG
 """
 
 from .portfolio_optimizer import PortfolioOptimizer, optimize_daf_portfolio

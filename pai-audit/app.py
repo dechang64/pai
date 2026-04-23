@@ -2,13 +2,14 @@
 PAI - Philanthropic Asset Intelligence
 AI-Powered Charitable Investment Optimization, Giving Strategy & Impact Measurement
 
-Prototype v0.2 — Gates Foundation Grand Challenges 2026
+Prototype v0.3 — Gates Foundation Grand Challenges 2026
 
 Modules:
 - InvestOpt: Mean-variance portfolio optimization (Markowitz)
 - GiveSmart: LLM-powered donation advisor
 - ImpactLens: Charity effectiveness evaluation
 - FedShield: Federated learning for privacy-preserving collaboration
+- Federated RAG: Cross-institutional knowledge retrieval (v0.3)
 """
 
 import streamlit as st
@@ -328,7 +329,7 @@ with st.sidebar:
         else:
             st.info("🔧 Demo模式 (无API Key)")
     
-    st.markdown("*Prototype v0.2 | 2026-04-23*")
+    st.markdown("*Prototype v0.3 | 2026-04-23*")
 
 
 # ============================================================
@@ -348,7 +349,10 @@ with col3:
 with col4:
     st.markdown('<div class="metric-card"><div class="metric-value">+45.9%</div><div class="metric-label">AI提升有效捐赠</div></div>', unsafe_allow_html=True)
 
-tab1, tab2, tab3, tab4 = st.tabs(["📊 InvestOpt", "🤖 GiveSmart", "🎯 ImpactLens", "🔗 Rare Disease Blueprint"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "📊 InvestOpt", "🤖 GiveSmart", "🎯 ImpactLens",
+    "🔗 Rare Disease Blueprint", "🔍 Federated RAG"
+])
 
 
 # ============================================================
@@ -623,15 +627,37 @@ with tab2:
                     try:
                         advisor = get_llm_advisor()
                         charity_list = data["charities"].to_dict('records')
-                        
+
+                        # Federated RAG enrichment (optional)
+                        rag_context = ""
+                        try:
+                            from core.federated_rag.streamlit_ui import _init_federated_rag
+                            if "fed_rag_router" not in st.session_state:
+                                st.session_state["fed_rag_router"] = _init_federated_rag()
+                            router = st.session_state["fed_rag_router"]
+                            rag_result = router.search_and_answer(
+                                f"{interest} charitable giving strategy",
+                                top_k=3,
+                            )
+                            if rag_result["sources"]:
+                                rag_context = "\n\n".join(
+                                    f"[{s['source']}]\n{s['preview']}..."
+                                    for s in rag_result["sources"][:3]
+                                )
+                        except Exception:
+                            pass  # RAG is optional — degrade gracefully
+
                         advice = advisor.generate_advice(
                             donor_type=donor_type,
                             annual_budget=annual_budget,
                             interest_area=interest,
                             tax_situation=tax_situation,
-                            charity_data=charity_list
+                            charity_data=charity_list,
+                            rag_context=rag_context,
                         )
                         st.markdown(advice)
+                        if rag_context:
+                            st.caption("📚 建议已通过联邦知识库增强（Federated RAG）")
                     except Exception as e:
                         st.error(f"LLM调用失败: {e}")
                         # Fallback
@@ -921,6 +947,25 @@ with tab4:
         - InvestOpt：优化基金会投资组合
         - ImpactLens：评估研发项目效果
         - FedShield：跨机构患者数据协作
+        """)
+
+
+# ============================================================
+# TAB 5: Federated RAG — 联邦知识库检索
+# ============================================================
+with tab5:
+    try:
+        from core.federated_rag.streamlit_ui import render_federated_rag
+        render_federated_rag()
+    except ImportError as e:
+        st.warning(f"Federated RAG module not available: {e}")
+        st.info("""
+        **Federated RAG** requires additional dependencies:
+        ```bash
+        pip install sentence-transformers faiss-cpu
+        ```
+        This module provides privacy-preserving cross-institutional
+        knowledge retrieval powered by AI embeddings.
         """)
 
 

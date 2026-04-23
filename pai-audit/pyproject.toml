@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pai"
-version = "0.2.0"
+version = "0.3.0"
 description = "Philanthropic Asset Intelligence - AI-Powered Charitable Investment Optimization"
 readme = "README.md"
 license = {text = "MIT"}
@@ -35,6 +35,11 @@ llm = [
     "openai>=1.0.0",
     "anthropic>=0.8.0",
     "litellm>=1.0.0",
+]
+rag = [
+    "sentence-transformers>=2.2.0",
+    "faiss-cpu>=1.7.0",
+    "torch>=2.0.0",
 ]
 dev = [
     "pytest>=7.4.0",
