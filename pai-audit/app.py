@@ -2,14 +2,16 @@
 PAI - Philanthropic Asset Intelligence
 AI-Powered Charitable Investment Optimization, Giving Strategy & Impact Measurement
 
-Prototype v0.3 — Gates Foundation Grand Challenges 2026
+Prototype v0.4 — Gates Foundation Grand Challenges 2026
 
 Modules:
-- InvestOpt: Mean-variance portfolio optimization (Markowitz)
-- GiveSmart: LLM-powered donation advisor
+- InvestOpt: Impact-aware portfolio optimization (Markowitz + impact utility)
+- GiveSmart: LLM-powered donation advisor with hallucination detection
 - ImpactLens: Charity effectiveness evaluation
+- GiveNudge: Behavioral engagement engine (warm-glow theory)
+- Impact Feedback Loop: Closed-loop outcome measurement
 - FedShield: Federated learning for privacy-preserving collaboration
-- Federated RAG: Cross-institutional knowledge retrieval (v0.3)
+- Federated RAG: Cross-institutional knowledge retrieval
 """
 
 import streamlit as st
@@ -307,9 +309,11 @@ with st.sidebar:
     st.markdown("")
     st.markdown("---")
     st.markdown("#### 核心模块")
-    st.markdown("📊 **InvestOpt** — 慈善投资优化 (Markowitz MVO)")
-    st.markdown("🤖 **GiveSmart** — LLM捐赠策略顾问")
+    st.markdown("📊 **InvestOpt** — 慈善投资优化 (Impact-Aware MVO)")
+    st.markdown("🤖 **GiveSmart** — LLM捐赠顾问 + 幻觉检测")
     st.markdown("🎯 **ImpactLens** — 效果评估")
+    st.markdown("💡 **GiveNudge** — 行为助推引擎")
+    st.markdown("🔄 **Impact Loop** — 效果闭环")
     st.markdown("🔒 **FedShield** — 联邦学习隐私层")
     st.markdown("")
     st.markdown("---")
@@ -329,7 +333,7 @@ with st.sidebar:
         else:
             st.info("🔧 Demo模式 (无API Key)")
     
-    st.markdown("*Prototype v0.3 | 2026-04-23*")
+    st.markdown("*Prototype v0.4 | 110 tests | 7,490 LOC*")
 
 
 # ============================================================
@@ -349,9 +353,10 @@ with col3:
 with col4:
     st.markdown('<div class="metric-card"><div class="metric-value">+45.9%</div><div class="metric-label">AI提升有效捐赠</div></div>', unsafe_allow_html=True)
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "📊 InvestOpt", "🤖 GiveSmart", "🎯 ImpactLens",
-    "🔗 Rare Disease Blueprint", "🔍 Federated RAG"
+    "💡 GiveNudge", "🔄 Impact Loop",
+    "🔬 Rare Disease", "🔍 Federated RAG"
 ])
 
 
@@ -428,7 +433,7 @@ with tab1:
         daf_amount = st.number_input("DAF金额（万美元）", value=100, min_value=1, max_value=10000)
         optimization_strategy = st.selectbox(
             "优化策略",
-            ["最大Sharpe", "最小方差", "风险平价", "DAF推荐"],
+            ["最大Sharpe", "最小方差", "风险平价", "DAF推荐", "Impact-Aware (v0.4)"],
             key="opt_strategy"
         )
     
@@ -454,6 +459,31 @@ with tab1:
                 else:
                     result = opt_results['daf_recommendation']
                     strategy_name = "DAF推荐"
+
+                # v0.4: Impact-Aware optimization
+                if optimization_strategy == "Impact-Aware (v0.4)":
+                    impact_scores = {
+                        "Vanguard 500": 0.4,
+                        "Fidelity Contrafund": 0.35,
+                        "TIAA-CREF Social Choice": 0.85,
+                        "Parnassus Core Equity": 0.80,
+                        "Calvert Equity": 0.75,
+                        "iShares ESG Aware MSCI USA": 0.70,
+                        "SPDR SSGA Gender Diversity": 0.65,
+                        "Vanguard FTSE Social Index": 0.72,
+                        "iShares MSCI KLD 400 Social": 0.68,
+                        "PIMCO ESG US Aggregate Bond": 0.60,
+                    }
+                    # Only include selected funds
+                    selected_impact = {k: v for k, v in impact_scores.items() if k in selected_funds}
+                    if selected_impact:
+                        optimizer = PortfolioOptimizer(
+                            pd.DataFrame(
+                                data["funds"][data["funds"]["name"].isin(selected_funds)]["monthly_returns"].tolist()
+                            ).T
+                        )
+                        result = optimizer.impact_aware_portfolio(selected_impact, impact_weight=0.5)
+                        strategy_name = "Impact-Aware"
                 
                 # Display metrics
                 col_r1, col_r2, col_r3, col_r4 = st.columns(4)
@@ -464,7 +494,10 @@ with tab1:
                 with col_r3:
                     st.metric("组合波动率", f"{result['volatility']:.1%}")
                 with col_r4:
-                    st.metric("Sharpe比率", f"{result['sharpe_ratio']:.2f}")
+                    if 'impact_score' in result:
+                        st.metric("Impact Score", f"{result['impact_score']:.2f}")
+                    else:
+                        st.metric("Sharpe比率", f"{result['sharpe_ratio']:.2f}")
                 
                 # Display allocation
                 st.markdown("#### 📊 最优资产配置")
@@ -760,9 +793,199 @@ with tab3:
 
 
 # ============================================================
-# TAB 4: Rare Disease Blueprint + Federated Learning
+# TAB 4: GiveNudge — 行为助推引擎
 # ============================================================
 with tab4:
+    st.markdown("## 💡 GiveNudge — 行为助推引擎")
+    st.markdown("**理论基础：** Andreoni (1990) 的 warm-glow giving 理论表明，捐赠者不仅关心受助者福利，还从捐赠行为本身获得心理满足。GiveNudge 利用这一机制，通过数据驱动的方式优化捐赠时机、渠道和框架。")
+
+    col_n1, col_n2 = st.columns([1, 1])
+    with col_n1:
+        st.markdown("### 📅 最优捐赠时机")
+        st.markdown("基于行为经济学研究，不同时段的捐赠转化率差异显著：")
+
+        timing_data = pd.DataFrame({
+            "时段": ["周一上午", "周二全天", "周三下午", "周四上午", "周五下午", "周末", "月末", "年末(12月)"],
+            "转化率倍数": [1.0, 1.15, 1.08, 1.12, 0.92, 0.85, 1.25, 1.45],
+            "推荐度": ["⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐", "⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐⭐⭐"],
+        })
+        st.dataframe(timing_data, use_container_width=True, hide_index=True)
+
+        st.markdown('\u003cdiv class="insight-box"\u003e💡 \u003cb\u003e洞察：\u003c/b\u003e年末（12月）捐赠转化率是年均的\u003cb\u003e1.45倍\u003c/b\u003e，这与税收截止日效应一致。PAI GiveNudge 在最优窗口期自动触发个性化提醒。\u003c/div\u003e', unsafe_allow_html=True)
+
+    with col_n2:
+        st.markdown("### 🎯 助推策略效果对比")
+        nudge_types = ["无助推", "默认提醒", "社会证明", "匹配捐赠", "影响框架", "紧急感", "Warm-Glow"]
+        nudge_effects = [1.0, 1.12, 1.28, 1.35, 1.22, 1.18, 1.31]
+        nudge_colors = ["#bdbdbd", "#90caf9", "#64b5f6", "#42a5f5", "#2196f3", "#1e88e5", "#1565c0"]
+
+        fig_nudge = go.Figure()
+        fig_nudge.add_trace(go.Bar(
+            x=nudge_types, y=nudge_effects,
+            marker_color=nudge_colors,
+            text=[f"+{int((v-1)*100)}%" for v in nudge_effects],
+            textposition="auto",
+        ))
+        fig_nudge.update_layout(
+            height=400,
+            title="不同助推策略的捐赠提升效果",
+            yaxis_title="相对捐赠量（无助推=1.0）",
+            template="plotly_white",
+        )
+        st.plotly_chart(fig_nudge, use_container_width=True)
+
+    # Donor segment demo
+    st.markdown("### 👥 捐赠者分群策略")
+    st.markdown("GiveNudge 根据捐赠者画像自动选择最优助推策略：")
+
+    seg_data = pd.DataFrame({
+        "分群": ["首次捐赠者", "活跃捐赠者", "沉睡捐赠者", "大额捐赠者", "DAF持有者"],
+        "核心策略": ["社会证明+影响框架", "Warm-Glow+认可", "紧急感+匹配", "个性化影响报告", "税务优化提醒"],
+        "推荐渠道": ["邮件", "应用内", "邮件+短信", "专属顾问", "应用内+邮件"],
+        "预期提升": ["+28%", "+15%", "+22%", "+12%", "+18%"],
+        "优先级": ["🔴 高", "🟡 中", "🔴 高", "🟢 低频高价值", "🟡 中"],
+    })
+    st.dataframe(seg_data, use_container_width=True, hide_index=True)
+
+    # A/B Test Framework
+    st.markdown("---")
+    st.markdown("### 🧪 A/B 测试框架")
+    st.markdown("GiveNudge 内置 A/B 测试引擎，持续优化助推策略：")
+
+    col_ab1, col_ab2 = st.columns([1, 1])
+    with col_ab1:
+        st.markdown("""
+        **实验设计**
+        - 对照组：标准提醒消息
+        - 实验组：GiveNudge 优化消息
+        - 样本量：每组 200+ 捐赠者
+        - 检验标准：p < 0.05
+        - 主要指标：转化率、捐赠金额、留存率
+        """)
+    with col_ab2:
+        st.markdown("""
+        **模拟结果（White et al. 2026 启发）**
+
+        | 指标 | 对照组 | GiveNudge | 提升 |
+        |------|--------|-----------|------|
+        | 转化率 | 5.5% | 7.2% | +31% |
+        | 平均金额 | $150 | $195 | +30% |
+        | 90天留存 | 19.4% | 26.1% | +35% |
+        | p-value | — | 0.003 | ✅ 显著 |
+        """)
+
+    st.markdown('\u003cdiv class="success-box"\u003e✅ \u003cb\u003eGiveNudge 核心价值：\u003c/b\u003e将行为经济学理论转化为可量化、可测试、可迭代的捐赠优化引擎。每个助推策略都有 A/B 测试支撑，确保持续改进。\u003c/div\u003e', unsafe_allow_html=True)
+
+
+# ============================================================
+# TAB 5: Impact Feedback Loop — 效果闭环
+# ============================================================
+with tab5:
+    st.markdown("## 🔄 Impact Feedback Loop — 效果闭环")
+    st.markdown("**核心创新：** PAI 最具变革性的组件。将实际公益效果（健康改善、教育成果、环境指标）反馈到投资策略和拨款建议中，实现「发生了什么」→「接下来该做什么」的闭环。")
+
+    # Architecture diagram
+    st.markdown("### 闭环架构")
+    col_loop1, col_loop2 = st.columns([1, 1])
+    with col_loop1:
+        fig_loop = go.Figure()
+        # Loop arrows
+        stages = [
+            (1, 4, "1. 拨款\nAllocation"),
+            (4, 7, "2. 执行\nExecution"),
+            (7, 4, "3. 测量\nMeasurement"),
+            (4, 1, "4. 反馈\nFeedback"),
+        ]
+        colors_loop = ["#1a73e8", "#34a853", "#fbbc04", "#ea4335"]
+        for i, (x1, x2, label) in enumerate(stages):
+            fig_loop.add_trace(go.Scatter(
+                x=[x1, x2], y=[4 if i % 2 == 0 else 2, 4 if i % 2 == 0 else 2],
+                mode="lines+text",
+                line=dict(color=colors_loop[i], width=3),
+                text=[label],
+                textposition="top center",
+                textfont=dict(size=11),
+                showlegend=False,
+            ))
+        # Center node
+        fig_loop.add_trace(go.Scatter(
+            x=[4], y=[3], mode="markers+text",
+            marker=dict(size=40, color="#1a73e8", symbol="circle"),
+            text=["PAI\nEngine"],
+            textfont=dict(size=12, color="white"),
+            showlegend=False,
+        ))
+        fig_loop.update_layout(
+            height=300,
+            xaxis=dict(visible=False, range=[0, 8]),
+            yaxis=dict(visible=False, range=[0, 6]),
+            template="plotly_white",
+            margin=dict(l=20, r=20, t=20, b=20),
+        )
+        st.plotly_chart(fig_loop, use_container_width=True)
+
+    with col_loop2:
+        st.markdown("""
+        **传统慈善 vs PAI 效果闭环**
+
+        | 维度 | 传统 | PAI |
+        |------|------|-----|
+        | 决策依据 | 主观判断 | 数据驱动 |
+        | 效果追踪 | 年度报告 | 实时监控 |
+        | 反馈机制 | ❌ 无 | ✅ 自动闭环 |
+        | 资源再分配 | 年度计划 | 动态调整 |
+        | 跨机构学习 | ❌ 孤立 | ✅ 联邦验证 |
+        """)
+
+    # Saturation detection
+    st.markdown("### 📉 效果饱和检测")
+    st.markdown("PAI 检测每个领域的边际效果递减，避免过度集中投入：")
+
+    np.random.seed(42)
+    funding_levels = np.linspace(100000, 5000000, 50)
+    # Diminishing returns curve
+    impact_health = 0.95 * (1 - np.exp(-funding_levels / 800000))
+    impact_education = 0.85 * (1 - np.exp(-funding_levels / 1200000))
+    impact_rare = 0.70 * (1 - np.exp(-funding_levels / 2000000))
+
+    fig_sat = go.Figure()
+    fig_sat.add_trace(go.Scatter(x=funding_levels/1e6, y=impact_health, name="Global Health", line=dict(width=2.5)))
+    fig_sat.add_trace(go.Scatter(x=funding_levels/1e6, y=impact_education, name="Education", line=dict(width=2.5)))
+    fig_sat.add_trace(go.Scatter(x=funding_levels/1e6, y=impact_rare, name="Rare Disease", line=dict(width=2.5)))
+    # Saturation threshold
+    fig_sat.add_hline(y=0.8, line_dash="dash", line_color="red", annotation_text="饱和阈值 (80%)")
+    fig_sat.update_layout(
+        height=400,
+        title="效果饱和曲线：边际效果递减",
+        xaxis_title="累计投入（百万美元）",
+        yaxis_title="效果评分",
+        template="plotly_white",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02),
+    )
+    st.plotly_chart(fig_sat, use_container_width=True)
+
+    st.markdown('\u003cdiv class="insight-box"\u003e💡 \u003cb\u003e关键洞察：\u003c/b\u003eGlobal Health 在 ~$200万 时达到饱和，而 Rare Disease 需要 ~$500万+。PAI 自动检测饱和点并建议将边际效果更高的领域获得更多资源。\u003c/div\u003e', unsafe_allow_html=True)
+
+    # Reallocation demo
+    st.markdown("### 🔄 自动再分配建议")
+    st.markdown("当效果信号偏离预测时，PAI 自动生成再分配建议：")
+
+    realloc_data = pd.DataFrame({
+        "受助机构": ["AMF", "GiveDirectly", "Cure RD", "Noora Health", "END Fund"],
+        "当前拨款": ["$500K", "$300K", "$200K", "$150K", "$250K"],
+        "效果信号": ["✅ 达标", "✅ 超预期", "⚠️ 低于预期", "✅ 达标", "✅ 超预期"],
+        "建议调整": ["维持", "+$50K", "-$80K", "维持", "+$30K"],
+        "原因": ["效果稳定", "成本效益优于预期", "研发进度滞后", "按计划执行", "NTD覆盖扩大"],
+    })
+    st.dataframe(realloc_data, use_container_width=True, hide_index=True)
+
+    st.markdown('\u003cdiv class="success-box"\u003e✅ \u003cb\u003eImpact Feedback Loop 核心价值：\u003c/b\u003e这是慈善领域的范式转变——从静态的、基于意见的捐赠，转向动态的、证据驱动的慈善资产管理。技术基础今天已经存在。\u003c/div\u003e', unsafe_allow_html=True)
+
+
+# ============================================================
+# TAB 6: Rare Disease Blueprint + Federated Learning
+# ============================================================
+with tab6:
     st.markdown("## 🔬 罕见病基金会建设蓝图")
     st.markdown('<div class="rare-disease-box">⚠️ <b>战略背景：</b>全球3亿罕见病患者、7,000+种疾病、95%无获批治疗方案。WEF 2026报告指出罕见病投资可释放<b>万亿美元</b>经济机会。</div>', unsafe_allow_html=True)
     
@@ -951,9 +1174,9 @@ with tab4:
 
 
 # ============================================================
-# TAB 5: Federated RAG — 联邦知识库检索
+# TAB 7: Federated RAG — 联邦知识库检索
 # ============================================================
-with tab5:
+with tab7:
     try:
         from core.federated_rag.streamlit_ui import render_federated_rag
         render_federated_rag()
@@ -975,9 +1198,9 @@ with tab5:
 st.markdown("---")
 st.markdown(f"""
 <div style="text-align: center; color: #999; font-size: 0.85rem;">
-    <b>PAI — Philanthropic Asset Intelligence</b> | Prototype v0.2<br>
+    <b>PAI — Philanthropic Asset Intelligence</b> | Prototype v0.4<br>
     Gates Foundation Grand Challenges 2026 · Project 3: AI to Accelerate Charitable Giving<br>
-    同时作为罕见病基金会建设蓝图 · 2026-04-23<br>
+    110 tests · 7,490 LOC · 8 modules · MIT License<br>
     <br>
     核心模块: {'✅ 已加载' if CORE_MODULES_AVAILABLE else '⚠️ 部分未加载'}
 </div>

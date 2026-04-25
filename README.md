@@ -4,10 +4,10 @@
 
 [![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://python.org)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.56-red.svg)](https://streamlit.io)
-[![Tests](https://img.shields.io/badge/Tests-41%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-110%20passed-brightgreen.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-*Prototype v0.3 · [Gates Foundation Grand Challenges 2026](https://gcgh.grandchallenges.org/challenge/artificial-intelligence-ai-accelerate-charitable-giving) · Project 3: AI to Accelerate Charitable Giving*
+*Prototype v0.4 · [Gates Foundation Grand Challenges 2026](https://gcgh.grandchallenges.org/challenge/artificial-intelligence-ai-accelerate-charitable-giving) · Project 3: AI to Accelerate Charitable Giving*
 
 ---
 
@@ -16,26 +16,31 @@
 ```
 PAI/
 ├── app.py                    # Streamlit Cloud single-file version (v0.2)
-├── pai-audit/                # Full modular version (v0.3) ← main development
-│   ├── app.py                # Streamlit dashboard (5 tabs)
+├── pai-audit/                # Full modular version (v0.4) ← main development
+│   ├── app.py                # Streamlit dashboard (7 tabs)
 │   ├── core/
-│   │   ├── portfolio_optimizer.py   # Markowitz MVO
+│   │   ├── portfolio_optimizer.py   # Markowitz MVO + Impact-Aware (v0.4)
 │   │   ├── llm_client.py            # GiveSmart LLM advisor
+│   │   ├── give_nudge.py            # GiveNudge behavioral engine (v0.4)
+│   │   ├── impact_feedback.py       # Impact Feedback Loop (v0.4)
 │   │   ├── federated_learning.py    # FedShield reference
-│   │   └── federated_rag/           # Federated RAG module (v0.3)
+│   │   └── federated_rag/           # Federated RAG module
 │   │       ├── config.py            # Dataclass configs
 │   │       ├── document_loader.py   # PDF/CSV/JSON/MD loader
 │   │       ├── embeddings.py        # sentence-transformers
 │   │       ├── vector_store.py      # FAISS index
 │   │       ├── retriever.py         # Cosine similarity search
 │   │       ├── generator.py         # LLM answer generation
+│   │       ├── hallucination_detector.py  # Hallucination detection (v0.4)
 │   │       ├── local_rag.py         # Single-node RAG pipeline
 │   │       ├── federated_query.py   # Multi-node federated router
 │   │       ├── federated_trainer.py # FedAvg embedding fine-tuning
 │   │       ├── streamlit_ui.py      # Streamlit integration
 │   │       └── demo.py              # Standalone demo
 │   ├── data/knowledge_base/         # 7 domain documents
-│   └── tests/test_federated_rag.py  # 41 unit tests
+│   └── tests/
+│       ├── test_federated_rag.py    # 41 unit tests
+│       └── test_v04_modules.py      # 69 unit tests (v0.4)
 ├── pai-deploy/               # Streamlit Cloud deployment
 ├── pai-cloud/                # Cloud variant
 ├── requirements.txt
@@ -47,10 +52,11 @@ PAI/
 
 ## Modules
 
-### 📊 InvestOpt — Portfolio Optimization
+### 📊 InvestOpt — Impact-Aware Portfolio Optimization
 - **Markowitz Mean-Variance Optimization (MVO)** using SciPy
+- **Impact-Aware Optimization (v0.4)**: jointly maximizes financial return × impact effectiveness
 - 63 mutual funds with risk metrics (Sharpe, Sortino, Calmar, Jensen α)
-- Maximum Sharpe Ratio & Minimum Variance portfolios
+- Maximum Sharpe Ratio, Minimum Variance, Risk Parity portfolios
 - Efficient frontier visualization
 - DAF-specific optimization with charitable impact metrics
 
@@ -61,6 +67,7 @@ PAI/
 - Warm-glow theory (Andreoni 1990) integration
 - **+45.9%** effective giving increase (White et al. 2026)
 - **Federated RAG enrichment** — advice grounded in cross-institutional knowledge
+- **Hallucination Detection (v0.4)** — confidence-scored citations for every claim
 
 ### 🎯 ImpactLens — Impact Evaluation
 - QALY/DALY-based charity scoring
@@ -68,13 +75,28 @@ PAI/
 - Evidence strength ratings
 - Radar chart visualization
 
-### 🔗 Federated RAG — Cross-Institutional Knowledge Retrieval (v0.3)
+### 💡 GiveNudge — Behavioral Engagement Engine (v0.4)
+- **Warm-glow giving theory** (Andreoni, 1990) — evidence-based behavioral nudges
+- Optimal timing recommendations for giving prompts
+- 6 nudge types: social proof, matching, urgency, recognition, impact frame, warm-glow
+- 4 channels: email, SMS, in-app, direct mail
+- Donor segmentation: first-time, recurring, lapsed, high-value, DAF holder
+- **A/B test framework** with statistical significance testing (p<0.05)
+
+### 🔄 Impact Feedback Loop (v0.4)
+- **Closed-loop system**: measured outcomes → updated recommendations
+- Impact signal ingestion from grantees (health, education, environment)
+- **Saturation detection**: diminishing returns modeling per program area
+- **Automatic reallocation**: suggests portfolio rebalancing when impact deviates
+- Privacy-preserving cross-institutional impact validation
+
+### 🔗 Federated RAG — Cross-Institutional Knowledge Retrieval
 - **Privacy-preserving**: raw documents never leave local nodes
 - **3 simulated institutions**: GiveWell, Tax Center, Behavioral Lab
 - **sentence-transformers** (all-MiniLM-L6-v2) + **FAISS** vector search
 - **FedAvg** fine-tuning for shared embedding model
 - **LLM generation**: retrieved context → AI-powered answers
-- **41 unit tests**, all passing
+- **Hallucination detection**: claim extraction → KB verification → confidence scoring
 
 ### 🛡️ FedShield — Federated Learning (Reference)
 - FedAvg implementation for privacy-preserving collaboration
@@ -108,53 +130,33 @@ python -m core.federated_rag
 ```bash
 cd pai-audit
 pip install pytest
-pytest tests/test_federated_rag.py -v
+pytest tests/ -v
 ```
 
 ---
 
-## Federated RAG Deep Dive
+## Impact Feedback Loop Architecture
 
-### How It Works
 ```
-User Query
+Grant Allocation
     ↓
 ┌─────────────────────────────────────────────┐
-│           Federated Query Router            │
+│              Program Execution               │
 ├──────────┬──────────┬──────────┬────────────┤
-│ GiveWell │ Tax Ctr  │ Behav Lab│  Remote... │
-│ (local)  │ (local)  │ (local)  │  (gRPC)    │
+│ Health   │ Education│ Environ. │ Rare Disease│
 │          │          │          │            │
-│ FAISS    │ FAISS    │ FAISS    │            │
-│ index    │ index    │ index    │            │
+│ Outcomes │ Outcomes │ Outcomes │ Outcomes   │
 └────┬─────┴────┬─────┴────┬─────┴────────────┘
      │          │          │
      ↓          ↓          ↓
-  scores     scores     scores    ← Only scores shared!
-     │          │          │
-     └──────────┴──────────┘
-                ↓
-         Aggregated Results
-                ↓
-         LLM Answer Generation
+  Impact Scoring & Saturation Detection
+     │
+     ↓
+  Reallocation Recommendations
+     │
+     ↓
+  Updated Grant Allocation  ← Loop closes
 ```
-
-### Privacy Guarantees
-- Raw documents **never** leave the local node
-- Only document IDs + similarity scores are transmitted
-- Federated fine-tuning uses **FedAvg** (no raw gradients shared)
-- Optional privacy mode hides content in UI
-
-### Knowledge Base (7 documents)
-| Document | Domain | Lines |
-|----------|--------|-------|
-| `givewell_charities.md` | Charity evaluation | 19 |
-| `impact_measurement.md` | Health economics (QALY/DALY) | 37 |
-| `daf_tax_strategies.md` | DAF tax optimization | 26 |
-| `daf_investment.md` | DAF investment (Markowitz) | 61 |
-| `behavioral_economics.md` | Giving behavior science | 45 |
-| `federated_learning.md` | FL theory & privacy | 62 |
-| `rare_disease.md` | Rare disease economics | 62 |
 
 ---
 

@@ -1,6 +1,7 @@
 """
 Portfolio Optimization Module for PAI
 Implements Mean-Variance Optimization (Markowitz) with SciPy
+and Impact-Aware Optimization (v0.4)
 """
 
 import numpy as np
@@ -19,6 +20,7 @@ class PortfolioOptimizer:
     - Maximum Sharpe ratio portfolio
     - Efficient frontier calculation
     - Risk parity portfolio
+    - Impact-aware optimization (v0.4): jointly optimize financial return × impact
     - Black-Litterman model support (planned)
     """
     
@@ -286,12 +288,128 @@ class PortfolioOptimizer:
     
     def _format_allocation(self, weights: Dict) -> str:
         """Format weights into readable allocation string."""
-        # Group by category (if available)
         formatted = []
         for name, weight in sorted(weights.items(), key=lambda x: -x[1]):
             if weight > 0.01:  # Only show >1%
                 formatted.append(f"{name}: {weight*100:.1f}%")
         return "\n".join(formatted)
+
+    # ================================================================
+    # v0.4: Impact-Aware Optimization
+    # ================================================================
+
+    def impact_aware_portfolio(
+        self,
+        impact_scores: Optional[Dict[str, float]] = None,
+        impact_weight: float = 0.5,
+    ) -> Dict:
+        """
+        Impact-aware portfolio optimization.
+
+        Jointly maximizes financial return × impact effectiveness
+        instead of financial return alone. This recognizes that the
+        highest-returning portfolio may produce less good if gains
+        flow to saturated or declining-impact programs.
+
+        Args:
+            impact_scores: Dict mapping asset names to impact
+                effectiveness scores (0-1). If None, uses equal scores.
+            impact_weight: Trade-off between financial return and
+                impact (0 = pure financial, 1 = pure impact).
+
+        Returns:
+            Dict with weights, return, volatility, sharpe, impact_score
+        """
+        if impact_scores is None:
+            impact_scores = {name: 0.5 for name in self.asset_names}
+
+        # Build impact vector aligned with asset order
+        impact_vec = np.array([
+            impact_scores.get(name, 0.5) for name in self.asset_names
+        ])
+
+        def impact_utility(w):
+            """Charitable utility = α × financial_sharpe + (1-α) × impact"""
+            fin = self.portfolio_sharpe(w)
+            imp = np.dot(w, impact_vec)
+            # Normalize both to [0, 1] range
+            fin_norm = max(0, min(1, (fin + 1) / 2))  # Sharpe typically [-1, 1]
+            return -(impact_weight * fin_norm + (1 - impact_weight) * imp)
+
+        constraints = {'type': 'eq', 'fun': lambda w: np.sum(w) - 1}
+        bounds = tuple((0, 1) for _ in range(self.n_assets))
+        w0 = np.ones(self.n_assets) / self.n_assets
+
+        result = minimize(
+            impact_utility, w0,
+            method='SLSQP', bounds=bounds,
+            constraints=constraints,
+            options={'maxiter': 1000, 'ftol': 1e-10}
+        )
+
+        weights = result.x
+        impact_score = float(np.dot(weights, impact_vec))
+
+        return {
+            'weights': dict(zip(self.asset_names, weights.round(4))),
+            'expected_return': self.portfolio_return(weights),
+            'volatility': self.portfolio_volatility(weights),
+            'sharpe_ratio': self.portfolio_sharpe(weights),
+            'impact_score': impact_score,
+            'impact_weight': impact_weight,
+            'charitable_utility': -impact_utility(weights),
+            'success': result.success,
+        }
+
+    def compare_financial_vs_impact(
+        self,
+        impact_scores: Dict[str, float],
+        impact_weight: float = 0.5,
+    ) -> Dict:
+        """
+        Compare pure financial vs impact-aware portfolios.
+
+        Demonstrates the value of impact-aware optimization by
+        showing the trade-off between financial return and
+        charitable impact.
+
+        Args:
+            impact_scores: Dict mapping asset names to impact scores.
+            impact_weight: Impact weight for impact-aware portfolio.
+
+        Returns:
+            Dict with both portfolios and comparison metrics.
+        """
+        financial = self.max_sharpe_portfolio()
+        impact = self.impact_aware_portfolio(impact_scores, impact_weight)
+
+        # Calculate impact of financial portfolio
+        impact_vec = np.array([
+            impact_scores.get(name, 0.5) for name in self.asset_names
+        ])
+        fin_weights = np.array([financial['weights'].get(n, 0) for n in self.asset_names])
+        fin_impact = float(np.dot(fin_weights, impact_vec))
+
+        # Impact improvement
+        impact_improvement = (
+            (impact['impact_score'] - fin_impact) / fin_impact * 100
+            if fin_impact > 0 else 0
+        )
+
+        # Return sacrifice
+        return_sacrifice = financial['expected_return'] - impact['expected_return']
+
+        return {
+            'financial_portfolio': financial,
+            'impact_portfolio': impact,
+            'financial_impact_score': fin_impact,
+            'impact_improvement_pct': impact_improvement,
+            'return_sacrifice': return_sacrifice,
+            'recommendation': (
+                f"Impact-aware portfolio achieves {impact_improvement:.1f}% higher "
+                f"charitable impact with {return_sacrifice:.2%} lower expected return."
+            ),
+        }
 
 
 def optimize_daf_portfolio(
