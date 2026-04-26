@@ -974,7 +974,8 @@ with tab4:
 # ============================================================
 with tab5:
     st.markdown("## 🔄 Impact Feedback Loop")
-    st.markdown("**Core Innovation:** PAI's most transformative component. It feeds real-world charitable outcomes (health improvements, education results, environmental metrics) back into investment strategies and grant recommendations, creating a closed loop from "what happened" to "what to do next.")
+    st.markdown("""**Core Innovation:** PAI's most transformative component. It feeds real-world charitable outcomes (health improvements, education results, environmental metrics) back into investment strategies and grant recommendations, creating a closed loop from "what happened" to "what to do next."
+""")
 
     # Architecture diagram
     st.markdown("### Closed-Loop Architecture")
