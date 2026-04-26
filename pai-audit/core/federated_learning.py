@@ -374,7 +374,7 @@ def create_fl_system(num_institutions: int = 4) -> FederatedLearningCoordinator:
     
     # Register simulated institutions
     institutions = [
-        ("hospital_suzhou", "Suzhou Hospital (苏州医院)", 5000),
+        ("hospital_suzhou", "Suzhou Hospital", 5000),
         ("hospital_shanghai", "Shanghai Jiao Tong Hospital", 8000),
         ("hospital_beijing", "Peking Union Medical College Hospital", 10000),
         ("pharma_boston", "Boston Children's Hospital", 3000),

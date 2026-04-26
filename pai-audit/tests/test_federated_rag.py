@@ -8,6 +8,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
+from unittest.mock import patch, MagicMock
 
 import numpy as np
 import pytest
@@ -36,6 +37,54 @@ from core.federated_rag.federated_query import (
     FederatedQueryRouter,
     FederatedSearchResult,
 )
+
+
+# ============================================================
+# Mock Helpers — avoid loading real sentence-transformer model
+# ============================================================
+
+def _mock_sentence_transformer(*args, **kwargs):
+    """Return a mock SentenceTransformer that produces deterministic 384-dim vectors.
+
+    All vectors share a strong common component so cosine similarity is always
+    high (>0.9), ensuring retrieval tests find results reliably.
+    """
+    mock_model = MagicMock()
+    mock_model.max_seq_length = 256
+    mock_model.get_sentence_embedding_dimension.return_value = 384
+    mock_model.get_embedding_dimension.return_value = 384
+
+    _cache = {}
+
+    def _text_to_vec(text):
+        if text in _cache:
+            return _cache[text]
+        rng = np.random.default_rng(abs(hash(text)) % (2**31))
+        # 95% shared component + 5% unique per text
+        shared = np.ones(384, dtype=np.float32) * 0.977  # unit-ish
+        unique = rng.standard_normal(384).astype(np.float32) * 0.05
+        vec = shared + unique
+        norm = np.linalg.norm(vec)
+        vec = vec / max(norm, 1e-10)
+        _cache[text] = vec
+        return vec
+
+    def encode(texts, **kw):
+        return np.array([_text_to_vec(t) for t in texts], dtype=np.float32)
+
+    mock_model.encode = encode
+    return mock_model
+
+
+@pytest.fixture(autouse=True)
+def _patch_sentence_transformers():
+    """Patch _load_sentence_transformer so no real model is loaded."""
+    def fake_load(self):
+        self._model = _mock_sentence_transformer()
+        self._dimension = 384
+
+    with patch.object(EmbeddingEngine, "_load_sentence_transformer", fake_load):
+        yield
 
 # ============================================================
 # Fixtures

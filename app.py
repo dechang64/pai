@@ -223,7 +223,7 @@ class PortfolioOptimizer:
                 if result.success:
                     front_returns.append(target)
                     front_vols.append(self.portfolio_volatility(result.x))
-            except:
+            except (ValueError, RuntimeError):
                 continue
         
         return np.array(front_returns), np.array(front_vols)

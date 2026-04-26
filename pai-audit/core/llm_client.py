@@ -238,16 +238,16 @@ Format response as markdown. Be specific and actionable."""
         
         # Budget mapping
         budget_map = {
-            "$1,000以下": 500, 
+            "Under $1,000": 500, 
             "$1,000-$10,000": 5000, 
             "$10,000-$100,000": 50000, 
             "$100,000-$1M": 500000, 
-            "$1M以上": 5000000
+            "Over $1M": 5000000
         }
         budget_num = budget_map.get(annual_budget, 5000)
         
         # Filter charities by interest
-        if interest_area == "罕见病":
+        if interest_area == "Rare Disease":
             filtered = [c for c in charity_data if "Rare" in c.get("category", "")]
         else:
             filtered = sorted(charity_data, key=lambda x: x.get("impact_score", 0), reverse=True)[:3]
@@ -273,25 +273,25 @@ Format response as markdown. Be specific and actionable."""
         
         # Tax advice
         tax_advice = {
-            "有增值证券": """
+            "Appreciated Securities": """
 - ✅ **Donate appreciated securities** → Avoid capital gains + full deduction
 - ✅ **Bunching strategy**: Concentrate 2-3 years of giving into one year
 - ✅ **DAF contribution**: Upfront tax benefit + tax-free growth
 - 📊 *Evidence: Saves ~20-30% in taxes for high earners*
 """,
-            "DAF已开设": """
+            "DAF Already Open": """
 - ✅ **Optimize DAF investments**: Default allocation likely underperforms 8-12%/year
 - ✅ **Increase payout rate**: Consider 5-7% annual grant for more impact
 - ✅ **Bunching into DAF**: Maximize tax efficiency
 - 📊 *Expected extra annual grants: 2-5% of DAF balance*
 """,
-            "逐项扣除": """
+            "Itemized Deduction": """
 - ✅ **Bunching strategy**: Cluster donations to exceed standard deduction
 - ✅ **Appreciated securities > cash**: Save 15-20% in taxes
 - ✅ **DAF for long-term giving**: Tax-free growth + future flexibility
 - 📊 *Typical tax savings: $2,000-10,000/year for $50K donors*
 """,
-            "标准扣除额": """
+            "Standard Deduction": """
 - ⚠️ **Consider bunching**: Save 2-3 years of donations for one big deduction
 - ✅ **DAF opening**: Establish now for future tax benefits
 - ✅ **Check state charitable deductions**: May differ from federal
@@ -299,7 +299,7 @@ Format response as markdown. Be specific and actionable."""
 """
         }
         
-        tax_text = tax_advice.get(tax_situation, tax_advice["标准扣除额"])
+        tax_text = tax_advice.get(tax_situation, tax_advice["Standard Deduction"])
         
         # Behavioral insights
         behavioral = f"""
