@@ -33,7 +33,7 @@
 
 ### 💡 GiveNudge — Behavioral Engagement Engine (v0.4)
 - 6 nudge strategies: social proof, matching, impact framing, urgency, warm-glow, default
-- Optimal timing analysis (12月 = 1.45× conversion)
+- Optimal timing analysis (December = 1.45x conversion)
 - 5 donor segments with tailored strategies
 - Built-in A/B testing framework
 
@@ -44,7 +44,7 @@
 - Cross-institutional benchmarking
 
 ### 🔬 Rare Disease Blueprint
-- 3亿 patients, 7,000+ diseases, 95% no approved treatment
+- 300M patients, 7,000+ diseases, 95% no approved treatment
 - Venture Philanthropy economic model
 - FedShield integration for cross-institutional patient data
 
